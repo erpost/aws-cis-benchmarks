@@ -13,6 +13,11 @@ if os.path.isfile(credentials):
 if os.path.isfile(config):
     os.environ['AWS_CONFIG_FILE'] = config
 
+# global variables
+iam_resource = boto3.resource('iam')
+iam_client = boto3.client('iam')
+password_policy = iam_resource.AccountPasswordPolicy()
+
 
 def csv_header():
     outfile = 'CIS Benchmarks.csv'
@@ -46,10 +51,7 @@ def cis_1_4():
 
 
 def cis_1_5():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    upper_chars = password_policy['RequireUppercaseCharacters']
+    upper_chars = password_policy.require_uppercase_characters
 
     if upper_chars is True:
         print('CIS 1.5:  Passed')
@@ -60,10 +62,7 @@ def cis_1_5():
 
 
 def cis_1_6():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    lower_chars = password_policy['RequireLowercaseCharacters']
+    lower_chars = password_policy.require_lowercase_characters
 
     if lower_chars is True:
         print('CIS 1.6:  Passed')
@@ -74,10 +73,7 @@ def cis_1_6():
 
 
 def cis_1_7():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    req_symbol = password_policy['RequireSymbols']
+    req_symbol = password_policy.require_symbols
 
     if req_symbol is True:
         print('CIS 1.7:  Passed')
@@ -88,10 +84,7 @@ def cis_1_7():
 
 
 def cis_1_8():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    req_number = password_policy['RequireNumbers']
+    req_number = password_policy.require_numbers
 
     if req_number is True:
         print('CIS 1.8:  Passed')
@@ -102,10 +95,7 @@ def cis_1_8():
 
 
 def cis_1_9():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    pass_length = password_policy['MinimumPasswordLength']
+    pass_length = password_policy.minimum_password_length
 
     if pass_length >= 14:
         print('CIS 1.9:  Passed')
@@ -116,12 +106,9 @@ def cis_1_9():
 
 
 def cis_1_10():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    pass_reuse = password_policy['PasswordReusePrevention']
+    pass_reuse = password_policy.password_reuse_prevention
 
-    if pass_reuse >= 24:
+    if pass_reuse is not None and pass_reuse >= 24:
         print('CIS 1.10:  Passed')
         csv_input('1.10', 'Level 1', 'IAM password policy prevents password reuse', 'Passed', 'N/A')
     else:
@@ -130,12 +117,9 @@ def cis_1_10():
 
 
 def cis_1_11():
-    iam = boto3.client('iam')
-    account_policy = iam.get_account_password_policy()
-    password_policy = account_policy['PasswordPolicy']
-    pass_age = password_policy['MaxPasswordAge']
+    pass_age = password_policy.max_password_age
 
-    if pass_age <= 90:
+    if pass_age is not None and pass_age <= 90:
         print('CIS 1.11:  Passed')
         csv_input('1.11', 'Level 1', 'IAM password policy expires passwords within 90 days or less', 'Passed', 'N/A')
     else:
@@ -144,9 +128,8 @@ def cis_1_11():
 
 
 def cis_1_12():
-    iam = boto3.client('iam')
-    summary = iam.get_account_summary()
-    summary_map = summary['SummaryMap']
+    account_summary = iam_resource.AccountSummary()
+    summary_map = account_summary.summary_map
     root_keys = summary_map['AccountAccessKeysPresent']
 
     if not root_keys:
@@ -158,9 +141,8 @@ def cis_1_12():
 
 
 def cis_1_13():
-    iam = boto3.client('iam')
-    summary = iam.get_account_summary()
-    summary_map = summary['SummaryMap']
+    account_summary = iam_resource.AccountSummary()
+    summary_map = account_summary.summary_map
     root_mfa = summary_map['AccountMFAEnabled']
 
     if root_mfa:
@@ -172,8 +154,7 @@ def cis_1_13():
 
 
 def cis_1_14():
-    iam = boto3.client('iam')
-    list_mfa_devices = iam.list_virtual_mfa_devices()
+    list_mfa_devices = iam_client.list_virtual_mfa_devices()
     mfa_devices = list_mfa_devices['VirtualMFADevices']
 
     hardware_mfa = True
@@ -195,20 +176,49 @@ def cis_1_15():
     print('CIS 1.15:  **TBD**')
 
 
+def cis_1_16():
+    # TODO: add list or dict for resources in CSV
+    users = iam_resource.users.all()
+
+    policy_violation = 0
+
+    # iterate through attached policies
+    for user in users:
+        response = iam_client.list_attached_user_policies(UserName=user.name)
+        policies = response['AttachedPolicies']
+        if policies:
+            policy_violation = 1
+
+    # iterate through inline policies
+    for user in users:
+        response = iam_client.list_user_policies(UserName=user.name)
+        policies = response['PolicyNames']
+        if policies:
+            policy_violation = 1
+
+    if not policy_violation:
+        print('CIS 1.16:  Passed')
+        csv_input('1.16', 'Level 1', 'IAM policies are attached only to groups or roles', 'Passed', 'N/A')
+    else:
+        print('CIS 1.16:  Failed')
+        csv_input('1.16', 'Level 1', 'IAM policies are attached only to groups or roles', 'Failed', 'N/A')
+
+
 if __name__ == '__main__':
     csv_header()
-    cis_1_1()
-    cis_1_2()
-    cis_1_3()
-    cis_1_4()
-    cis_1_5()
-    cis_1_6()
-    cis_1_7()
-    cis_1_8()
-    cis_1_9()
-    cis_1_10()
-    cis_1_11()
-    cis_1_12()
-    cis_1_13()
-    cis_1_14()
-    cis_1_15()
+    # cis_1_1()
+    # cis_1_2()
+    # cis_1_3()
+    # cis_1_4()
+    # cis_1_5()
+    # cis_1_6()
+    # cis_1_7()
+    # cis_1_8()
+    # cis_1_9()
+    # cis_1_10()
+    # cis_1_11()
+    # cis_1_12()
+    # cis_1_13()
+    # cis_1_14()
+    # cis_1_15()
+    cis_1_16()
