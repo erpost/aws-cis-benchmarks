@@ -219,7 +219,7 @@ def cis_1_19():
 
 
 def cis_1_20():
-    # TODO: add Group and Role checks
+    # TODO: add support for Group and Role checks
     policy = iam_resource.Policy('arn:aws:iam::aws:policy/AWSSupportAccess')
     users = policy.attached_users.all()
 
@@ -241,23 +241,23 @@ def cis_1_20():
 
 if __name__ == '__main__':
     csv_header()
-    # cis_1_1()
-    # cis_1_2()
-    # cis_1_3()
-    # cis_1_4()
-    # cis_1_5()
-    # cis_1_6()
-    # cis_1_7()
-    # cis_1_8()
-    # cis_1_9()
-    # cis_1_10()
-    # cis_1_11()
-    # cis_1_12()
-    # cis_1_13()
-    # cis_1_14()
-    # cis_1_15()
-    # cis_1_16()
-    # cis_1_17()
-    # cis_1_18()
-    # cis_1_19()
+    cis_1_1()
+    cis_1_2()
+    cis_1_3()
+    cis_1_4()
+    cis_1_5()
+    cis_1_6()
+    cis_1_7()
+    cis_1_8()
+    cis_1_9()
+    cis_1_10()
+    cis_1_11()
+    cis_1_12()
+    cis_1_13()
+    cis_1_14()
+    cis_1_15()
+    cis_1_16()
+    cis_1_17()
+    cis_1_18()
+    cis_1_19()
     cis_1_20()
