@@ -204,6 +204,41 @@ def cis_1_16():
         csv_input('1.16', 'Level 1', 'IAM policies are attached only to groups or roles', 'Failed', 'N/A')
 
 
+def cis_1_17():
+    print('CIS 1.17:  Check Manually')
+    csv_input('1.17', 'Level 1', 'Maintain current contact details', 'Check Manually', 'N/A')
+
+
+def cis_1_18():
+    print('CIS 1.18:  Check Manually')
+    csv_input('1.18', 'Level 1', 'Ensure security contact information is registered', 'Check Manually', 'N/A')
+
+
+def cis_1_19():
+    print('CIS 1.19:  **TBD**')
+
+
+def cis_1_20():
+    # TODO: add Group and Role checks
+    policy = iam_resource.Policy('arn:aws:iam::aws:policy/AWSSupportAccess')
+    users = policy.attached_users.all()
+
+    support_users = 0
+
+    for user in users:
+        if user.name:
+            support_users = 1
+
+    if support_users:
+        print('CIS 1.20:  Passed')
+        csv_input('1.20', 'Level 1', 'Ensure a support role has been created to manage incidents with AWS Support',
+                                     'Passed', 'N/A')
+    else:
+        print('CIS 1.20:  Failed')
+        csv_input('1.20', 'Level 1', 'Ensure a support role has been created to manage incidents with AWS Support',
+                                     'Failed', 'N/A')
+
+
 if __name__ == '__main__':
     csv_header()
     # cis_1_1()
@@ -221,4 +256,8 @@ if __name__ == '__main__':
     # cis_1_13()
     # cis_1_14()
     # cis_1_15()
-    cis_1_16()
+    # cis_1_16()
+    # cis_1_17()
+    # cis_1_18()
+    # cis_1_19()
+    cis_1_20()
